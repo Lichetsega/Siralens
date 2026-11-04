@@ -1,0 +1,35 @@
+# --- Secrets (never commit) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Python ---
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# --- Node / Next.js (phase 5) ---
+node_modules/
+.next/
+out/
+dist/
+
+# --- Editors and OS ---
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- Local files ---
+*.log
+pip_log.txt
