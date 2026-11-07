@@ -1,0 +1,190 @@
+# =====================================================================================
+# SIRALens sources: the ONE place that lists everything we crawl.
+# The runner loops over this file. To add a portal or a Telegram channel, add an entry
+# here. No new code is needed unless a site fits none of the engines below.
+#
+# Engines
+#   html       any website with job detail pages (list pages and/or sitemaps -> JSON-LD or generic text)
+#   feed       RSS / Atom / WordPress feeds
+#   telegram   a public channel through t.me/s/<channel>
+#   json_api   a JSON endpoint you found in the browser Network tab (config only)
+#   reliefweb  the official ReliefWeb API
+#
+# Workflow for every new source:
+#   1. python -m crawlers.runner --check <slug>     (dry run: shows links found, samples, problems)
+#   2. adjust the entry until the samples look right
+#   3. set  enabled: true
+# Entries marked "UNVERIFIED" are best guesses: run --check before enabling them.
+# =====================================================================================
+
+defaults:
+  delay: 2.0            # seconds between requests to the same site
+  respect_robots: true
+
+sources:
+  # ------------------------------------------------------------------ portals (engine: html)
+  - slug: geezjobs
+    name: GeezJobs
+    kind: portal
+    engine: html
+    wave: 1
+    enabled: true
+    base_url: https://geezjobs.com/
+    discovery:
+      list_urls:
+        - https://geezjobs.com/
+        # add listing pages here once you find them, e.g. https://geezjobs.com/jobs?page={page}
+      link_pattern: "/job-detail/"      # job pages look like /job-detail/<slug>
+    max_details: 60
+
+  - slug: ethiopianreporter
+    name: Ethiopian Reporter Jobs
+    kind: portal
+    engine: html
+    wave: 2
+    enabled: false                       # UNVERIFIED
+    base_url: https://www.ethiopianreporterjobs.com/
+    discovery:
+      list_urls: ["https://www.ethiopianreporterjobs.com/"]
+
+  - slug: ethiopiawork
+    name: EthiopiaWork
+    kind: portal
+    engine: html
+    wave: 2
+    enabled: false                       # UNVERIFIED
+    base_url: https://www.ethiopiawork.com/
+    discovery:
+      list_urls: ["https://www.ethiopiawork.com/"]
+
+  - slug: palmjobs
+    name: PalmJobs
+    kind: portal
+    engine: html
+    wave: 2
+    enabled: false                       # UNVERIFIED
+    base_url: https://palmjobs.et/
+    discovery:
+      list_urls: ["https://palmjobs.et/"]
+
+  - slug: muyalogy
+    name: Muyalogy
+    kind: portal
+    engine: html
+    wave: 2
+    enabled: false                       # UNVERIFIED (if it is a WordPress site, try engine: feed with /feed/)
+    base_url: https://muyalogy.com/
+    discovery:
+      list_urls: ["https://muyalogy.com/"]
+
+  - slug: ethiongojobs
+    name: EthioNGOJobs
+    kind: portal
+    engine: html
+    wave: 2
+    enabled: false                       # UNVERIFIED
+    base_url: https://www.ethiongojobs.com/
+    discovery:
+      list_urls: ["https://www.ethiongojobs.com/"]
+
+  - slug: abayjobs
+    name: Abay Jobs (website)
+    kind: portal
+    engine: html
+    wave: 2
+    enabled: false                       # UNVERIFIED; the Telegram channel below links here
+    base_url: https://abayjobs.com/
+    discovery:
+      list_urls: ["https://abayjobs.com/"]
+
+  # ------------------------------------------------------------------ JavaScript sites (engine: json_api)
+  # These load jobs from a JSON endpoint. Find it in the browser: F12 -> Network -> Fetch/XHR -> reload,
+  # click the request that returns the job list, then fill in url / items_path / id_path / fields.
+  - slug: ethiojobs
+    name: EthioJobs
+    kind: portal
+    engine: json_api
+    wave: 1
+    enabled: false                       # needs the endpoint below
+    base_url: https://ethiojobs.net/
+    url: ""                              # e.g. https://.../jobs?page={page}
+    items_path: ""
+    id_path: id
+    fields: {}                           # e.g. {title: title, employer: company.name, deadline: closing_date}
+    link_template: "https://ethiojobs.net/jobs/{id}"
+
+  - slug: hahu
+    name: Hahu Jobs
+    kind: portal
+    engine: json_api
+    wave: 2
+    enabled: false                       # needs the endpoint below
+    base_url: https://www.hahu.jobs/
+    url: ""
+    items_path: ""
+    id_path: id
+    fields: {}
+
+  # ------------------------------------------------------------------ NGO and international
+  - slug: reliefweb
+    name: ReliefWeb
+    kind: ngo
+    engine: reliefweb
+    wave: 1
+    enabled: true                        # needs RELIEFWEB_APPNAME in .env (register an app name with ReliefWeb)
+    base_url: https://reliefweb.int/
+    queries:
+      - {name: Ethiopia, field: country.iso3, value: ETH}
+      # worldwide / remote jobs open to Ethiopians can be added later, e.g.
+      # - {name: Worldwide, field: country.name, value: World}
+
+  - slug: impactpool
+    name: Impactpool
+    kind: ngo
+    engine: feed
+    wave: 3
+    enabled: false                       # UNVERIFIED feed address
+    base_url: https://www.impactpool.org/
+    feed_urls: ["https://www.impactpool.org/feeds/jobs"]
+
+  - slug: unjobs
+    name: UNjobs
+    kind: ngo
+    engine: html
+    wave: 3
+    enabled: false                       # UNVERIFIED
+    base_url: https://unjobs.org/
+    discovery:
+      list_urls: ["https://unjobs.org/duty_stations/eth"]
+
+  # ------------------------------------------------------------------ Telegram channels (engine: telegram)
+  # One engine, any number of channels. Enable these when we move on to Telegram.
+  - slug: tg_abayjobs21
+    name: "Telegram: abayjobs21"
+    kind: telegram
+    engine: telegram
+    wave: 3
+    enabled: false
+    base_url: https://t.me/s/abayjobs21
+    channel: abayjobs21
+    max_pages: 3
+
+  - slug: tg_josad
+    name: "Telegram: josad_software"
+    kind: telegram
+    engine: telegram
+    wave: 3
+    enabled: false
+    base_url: https://t.me/s/josad_software
+    channel: josad_software
+    max_pages: 3
+
+  - slug: tg_freelance
+    name: "Telegram: freelance_ethio"
+    kind: telegram
+    engine: telegram
+    wave: 3
+    enabled: false
+    base_url: https://t.me/s/freelance_ethio
+    channel: freelance_ethio
+    max_pages: 3
