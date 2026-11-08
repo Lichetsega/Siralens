@@ -6,8 +6,29 @@ Telegram channels, and NGO/international sources, in English and Amharic.
 ## Layout
 - `backend/`  FastAPI API (auth boundary in `app/auth.py`)
 - `db/migrations/`  SQL schema
-- `crawlers/`  source adapters (phase 2)
-- `frontend/`  React app (phase 5)
+- `crawlers/`  source adapters & multi-engine scrapers (Phase 1)
+- `normalizer/`  normalization pipeline, calendar converter, skill tagger & scam detector (Phase 2)
+- `frontend/`  React app (Phase 5)
+
+## Normalization Pipeline (Phase 2)
+Consumes raw listings from `job_raw`, cleans text, converts Ethiopian Calendar to Gregorian dates, extracts fields (title, employer, location, work mode, job type, education, experience, apply info), attaches canonical skills, flags scam jobs, deduplicates, and writes to `jobs` and `job_skills`.
+
+```bash
+# Dry run: preview extracted fields without writing to the database
+python -m normalizer.runner --dry-run
+
+# Run normalization on all pending jobs
+python -m normalizer.runner
+
+# Normalize up to 200 items
+python -m normalizer.runner --limit 200
+
+# View current database counts and stats
+python -m normalizer.runner --stats
+
+# Run normalization test suite
+pytest tests/test_normalizer.py -v
+```
 
 ## Setup (phase 1)
 1. Create a free project at supabase.com.
