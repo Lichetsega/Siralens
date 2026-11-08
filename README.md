@@ -26,8 +26,21 @@ python -m normalizer.runner --limit 200
 # View current database counts and stats
 python -m normalizer.runner --stats
 
-# Run normalization test suite
-pytest tests/test_normalizer.py -v
+## Automated Nightly Pipeline
+A unified pipeline that automatically runs every midnight:
+1. Crawls all enabled sources (websites, RSS feeds, Telegram channels) incrementally.
+2. Normalizes raw listings, extracts bilingual titles, maps skills, and assesses scam risks.
+3. Automatically marks expired jobs whose deadline has passed (`status = 'expired'`).
+
+### Cloud Automation (GitHub Actions - Recommended)
+Runs completely serverless in the cloud at **00:00 East Africa Time** every night (even when your PC is turned off).
+- Configuration: [nightly_crawl.yml](file:///.github/workflows/nightly_crawl.yml)
+- Set up: Go to GitHub Repo -> **Settings** -> **Secrets and variables** -> **Actions** -> Add `DATABASE_URL`.
+
+### Local Windows Automation (Task Scheduler)
+To run automatically on your Windows PC every midnight:
+```cmd
+schtasks /create /tn "SiraLens_Nightly_Pipeline" /tr "C:\Users\liche\Desktop\SiraLens\siralens-phase1\siralens\scripts\run_nightly.bat" /sc daily /st 00:00
 ```
 
 ## Setup (phase 1)

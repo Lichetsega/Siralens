@@ -70,6 +70,24 @@ def print_stats(dsn: str) -> None:
     print("=" * 60)
 
 
+def expire_past_deadlines(conn: psycopg.Connection) -> int:
+    """Mark jobs whose deadline has passed as expired."""
+    with conn.transaction(), conn.cursor() as cur:
+        cur.execute(
+            """
+            update jobs
+            set status = 'expired', last_seen_at = now()
+            where status = 'open' and deadline is not null and deadline < current_date
+            returning id
+            """
+        )
+        expired = cur.fetchall()
+        count = len(expired)
+    if count > 0:
+        print(f"Expired {count} jobs whose deadlines have passed.")
+    return count
+
+
 def load_existing_dedup_groups(conn: psycopg.Connection) -> dict[str, uuid.UUID]:
     """Preload dedup keys from existing jobs."""
     groups: dict[str, uuid.UUID] = {}
@@ -263,6 +281,9 @@ def process_batch(
 
             except Exception as exc:
                 print(f"[{idx:4d}/{total_rows}] [{source_slug}] ERROR on item {r['external_id']}: {exc}")
+
+        if not dry_run:
+            expire_past_deadlines(conn)
 
         print("\n" + "=" * 60)
         print("NORMALIZATION SUMMARY:")

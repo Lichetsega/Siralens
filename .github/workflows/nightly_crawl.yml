@@ -1,0 +1,33 @@
+name: SiraLens Nightly Crawl & Normalization
+
+on:
+  schedule:
+    # Runs at 21:00 UTC every day (00:00 / midnight East Africa Time UTC+3)
+    - cron: '0 21 * * *'
+  workflow_dispatch:  # Allows manual triggering from the GitHub Actions tab
+
+jobs:
+  crawl_and_normalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install psycopg[binary] pydantic-settings python-dotenv pyyaml httpx beautifulsoup4 feedparser
+
+      - name: Run Nightly Pipeline (Crawl + Normalize + Expire)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python scripts/nightly_pipeline.py
