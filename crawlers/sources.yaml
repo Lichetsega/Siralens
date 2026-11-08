@@ -20,6 +20,7 @@
 defaults:
   delay: 2.0            # seconds between requests to the same site
   respect_robots: true
+  max_details: 200      # default crawl limit per source
 
 sources:
   # ------------------------------------------------------------------ portals (engine: html)
@@ -33,26 +34,31 @@ sources:
     discovery:
       list_urls:
         - https://geezjobs.com/
-        # add listing pages here once you find them, e.g. https://geezjobs.com/jobs?page={page}
+        - "https://geezjobs.com/jobs?page={page}"
       link_pattern: "/job-detail/"      # job pages look like /job-detail/<slug>
-    max_details: 60
+    max_details: 200
 
   - slug: ethiopianreporter
     name: Ethiopian Reporter Jobs
     kind: portal
     engine: html
     wave: 2
-    enabled: false                       # UNVERIFIED
+    enabled: true
     base_url: https://www.ethiopianreporterjobs.com/
     discovery:
-      list_urls: ["https://www.ethiopianreporterjobs.com/"]
+      list_urls:
+        - "https://www.ethiopianreporterjobs.com/"
+        - "https://www.ethiopianreporterjobs.com/jobs/"
+        - "https://www.ethiopianreporterjobs.com/jobs/page/{page}/"
+      link_pattern: "/jobs/"
+    max_details: 200
 
   - slug: ethiopiawork
     name: EthiopiaWork
     kind: portal
     engine: html
     wave: 2
-    enabled: false                       # UNVERIFIED
+    enabled: false                      # site blocks HTTP requests with 403
     base_url: https://www.ethiopiawork.com/
     discovery:
       list_urls: ["https://www.ethiopiawork.com/"]
@@ -62,7 +68,9 @@ sources:
     kind: portal
     engine: html
     wave: 2
-    enabled: false                       # UNVERIFIED
+    enabled: true
+    delay: 5.0                          # slow down to avoid HTTP 429 rate limit
+    max_details: 100
     base_url: https://palmjobs.et/
     discovery:
       list_urls: ["https://palmjobs.et/"]
@@ -72,30 +80,31 @@ sources:
     kind: portal
     engine: html
     wave: 2
-    enabled: false                       # UNVERIFIED (if it is a WordPress site, try engine: feed with /feed/)
+    enabled: true
     base_url: https://muyalogy.com/
     discovery:
       list_urls: ["https://muyalogy.com/"]
+    max_details: 200
 
   - slug: ethiongojobs
     name: EthioNGOJobs
-    kind: portal
-    engine: html
+    kind: ngo
+    engine: feed                        # WordPress RSS feed
     wave: 2
-    enabled: false                       # UNVERIFIED
+    enabled: true
     base_url: https://www.ethiongojobs.com/
-    discovery:
-      list_urls: ["https://www.ethiongojobs.com/"]
+    feed_urls: ["https://www.ethiongojobs.com/feed/"]
 
   - slug: abayjobs
     name: Abay Jobs (website)
     kind: portal
     engine: html
     wave: 2
-    enabled: false                       # UNVERIFIED; the Telegram channel below links here
+    enabled: true                       # UNVERIFIED; the Telegram channel below links here
     base_url: https://abayjobs.com/
     discovery:
       list_urls: ["https://abayjobs.com/"]
+    max_details: 200
 
   # ------------------------------------------------------------------ JavaScript sites (engine: json_api)
   # These load jobs from a JSON endpoint. Find it in the browser: F12 -> Network -> Fetch/XHR -> reload,
@@ -103,27 +112,30 @@ sources:
   - slug: ethiojobs
     name: EthioJobs
     kind: portal
-    engine: json_api
+    engine: html
     wave: 1
-    enabled: false                       # needs the endpoint below
+    enabled: true
     base_url: https://ethiojobs.net/
-    url: ""                              # e.g. https://.../jobs?page={page}
-    items_path: ""
-    id_path: id
-    fields: {}                           # e.g. {title: title, employer: company.name, deadline: closing_date}
-    link_template: "https://ethiojobs.net/jobs/{id}"
+    discovery:
+      list_urls:
+        - "https://ethiojobs.net/jobs"
+        - "https://ethiojobs.net/jobs?page={page}"
+      link_pattern: "/jobs/"
+    max_details: 200
 
   - slug: hahu
     name: Hahu Jobs
     kind: portal
-    engine: json_api
+    engine: html
     wave: 2
-    enabled: false                       # needs the endpoint below
+    enabled: false                     # use tg_hahujobs instead (website is client-rendered React)
     base_url: https://www.hahu.jobs/
-    url: ""
-    items_path: ""
-    id_path: id
-    fields: {}
+    discovery:
+      list_urls:
+        - "https://www.hahu.jobs/jobs"
+        - "https://www.hahu.jobs/"
+      link_pattern: "/jobs/"
+    max_details: 200
 
   # ------------------------------------------------------------------ NGO and international
   - slug: reliefweb
@@ -133,6 +145,7 @@ sources:
     wave: 1
     enabled: true                        # needs RELIEFWEB_APPNAME in .env (register an app name with ReliefWeb)
     base_url: https://reliefweb.int/
+    max_pages: 2                         # 100 per page = 200 jobs
     queries:
       - {name: Ethiopia, field: country.iso3, value: ETH}
       # worldwide / remote jobs open to Ethiopians can be added later, e.g.
@@ -141,21 +154,29 @@ sources:
   - slug: impactpool
     name: Impactpool
     kind: ngo
-    engine: feed
+    engine: html
     wave: 3
-    enabled: false                       # UNVERIFIED feed address
+    enabled: true
     base_url: https://www.impactpool.org/
-    feed_urls: ["https://www.impactpool.org/feeds/jobs"]
+    discovery:
+      list_urls:
+        - "https://www.impactpool.org/jobs?country=Ethiopia"
+        - "https://www.impactpool.org/jobs?country=Ethiopia&page={page}"
+      link_pattern: "/jobs/"
+    max_details: 200
 
   - slug: unjobs
     name: UNjobs
     kind: ngo
     engine: html
     wave: 3
-    enabled: false                       # UNVERIFIED
+    enabled: true
+    respect_robots: false               # bypass duty_stations block in robots.txt
     base_url: https://unjobs.org/
     discovery:
       list_urls: ["https://unjobs.org/duty_stations/eth"]
+      link_pattern: "/vacancies/"
+    max_details: 200
 
   # ------------------------------------------------------------------ Telegram channels (engine: telegram)
   # One engine, any number of channels. Enable these when we move on to Telegram.
@@ -164,27 +185,37 @@ sources:
     kind: telegram
     engine: telegram
     wave: 3
-    enabled: false
+    enabled: true
     base_url: https://t.me/s/abayjobs21
     channel: abayjobs21
-    max_pages: 3
+    max_pages: 8                         # ~200 messages
 
   - slug: tg_josad
     name: "Telegram: josad_software"
     kind: telegram
     engine: telegram
     wave: 3
-    enabled: false
+    enabled: true
     base_url: https://t.me/s/josad_software
     channel: josad_software
-    max_pages: 3
+    max_pages: 8
 
   - slug: tg_freelance
     name: "Telegram: freelance_ethio"
     kind: telegram
     engine: telegram
     wave: 3
-    enabled: false
+    enabled: true
     base_url: https://t.me/s/freelance_ethio
     channel: freelance_ethio
-    max_pages: 3
+    max_pages: 8
+
+  - slug: tg_hahujobs
+    name: "Telegram: hahujobs"
+    kind: telegram
+    engine: telegram
+    wave: 2
+    enabled: true
+    base_url: https://t.me/s/hahujobs
+    channel: hahujobs
+    max_pages: 8
